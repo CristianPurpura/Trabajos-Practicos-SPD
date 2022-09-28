@@ -1,0 +1,149 @@
+
+#define botonInicio 2 // pulsador de inicio
+#define botonReinicio 3 // pulsador de reinicio
+#define cantidadLeds 10
+
+
+
+
+const int ATRASO_BOTONES = 100;
+const int ATRASO_LEDS = 100;
+const int ATRASO_CONTADOR = 1000;
+
+int contador = 0;
+
+const int ARRAY_LEDS[cantidadLeds] = {4, 5, 6, 7, 8, 9, 10, 11, 12, 13};
+
+long int botonesAntes;
+long int ledsAntes;
+long int contadorAntes;
+
+int botInicioAntes = 0;
+int botReinicioAntes = 0;
+int pausa = 1;
+
+
+void setup() 
+{
+	Serial.begin(9600);
+	inicializacion();// inicializa botones y leds
+
+}
+
+
+void loop() 
+{
+  	
+
+
+	if (millis() - botonesAntes >= ATRASO_BOTONES) 
+	{
+		botonesAntirrebote();
+
+		botonesAntes = millis();
+	}
+
+	if (pausa != 1) 
+	{
+		if (millis() - ledsAntes >= ATRASO_LEDS) 
+		{
+			funcionamientoLeds(contador, cantidadLeds); 
+
+			ledsAntes = millis();
+		}
+
+
+		if (millis() - contadorAntes >= ATRASO_CONTADOR) 
+		{
+			if (contador >= 1023) 
+			{
+				Serial.print("\t MAXIMO DE SEGUNDOS ALCANZADO SE REINICIA\n");
+				contador = 0;
+				funcionamientoLeds(contador, cantidadLeds);
+				
+			}
+
+			contador++;
+
+          Serial.print(contador);
+          Serial.print(" Segundos\n");
+
+
+			contadorAntes = millis();
+		}
+	}
+	delay(5);
+}
+
+
+
+/*Inicializa los pines de los led y los botones
+ */
+void inicializacion()
+{
+	for (int i = 0; i < cantidadLeds; i++) 
+	{
+		pinMode(ARRAY_LEDS[i], OUTPUT);
+	}
+
+	pinMode(botonInicio, INPUT);
+	pinMode(botonReinicio, INPUT);
+}
+
+
+/* revisa el estado de los botones y hace el antirrebote*/
+
+void botonesAntirrebote() 
+{
+
+	int botInicioAhora = digitalRead(botonInicio);
+	int botReinicioAhora = digitalRead(botonReinicio);
+
+
+	if(botInicioAhora && !botInicioAntes) 
+	{
+		pausa = !pausa;
+		digitalWrite(botonInicio,pausa);
+	}
+	botInicioAntes= botInicioAhora;
+
+	if (botReinicioAhora && !botReinicioAntes) 
+	{
+		digitalWrite(botonReinicio,1);
+		contador = 0;
+		funcionamientoLeds(contador, cantidadLeds);
+	}
+	botReinicioAntes= botReinicioAhora;
+}
+
+
+/*Se ingresa numero decimal se convierte a binario y se muestra en los leds*/
+
+void funcionamientoLeds(int num, const int tam) 
+{
+	int numeroBinario[tam];
+
+	decPasoBin(num, numeroBinario, tam);
+
+	for (int i = 0; i < tam; i++) 
+	{
+		digitalWrite(ARRAY_LEDS[i], numeroBinario[i]);
+	}
+}
+
+//pasa el numero decimal a un binario en un array
+
+void decPasoBin(int decimal, int* arrayBinario, const int size) 
+{
+	for (int i = 0; i < size; i++) 
+	{
+		if (decimal % 2) 
+		{
+			arrayBinario[i] = 1;
+		} else 
+		{
+			arrayBinario[i] = 0;
+		}
+		decimal = decimal / 2;
+	}
+}
